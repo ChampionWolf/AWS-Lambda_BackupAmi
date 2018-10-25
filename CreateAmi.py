@@ -14,7 +14,7 @@ import re
 allowdWeekDayValues = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sunday', 'monday', 'tuesday', 'wednesday',
                        'thursday', 'friday', 'saturday']
 
-# 创建AMI的功能。
+# 创建AMI的功能实现
 def createAmi():
     # 变量
     now = datetime.datetime.now()
