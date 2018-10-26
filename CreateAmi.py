@@ -16,8 +16,8 @@ allowdWeekDayValues = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sunday'
 
 # 创建AMI的功能实现
 def createAmi():
-    # 变量
-    now = datetime.datetime.now()
+    # 定义变量
+    now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
     today = now.day
     currentHour = now.hour
     currentMonth = now.strftime('%B')
@@ -42,14 +42,14 @@ def createAmi():
             SkipAmi = False     # 定义默认值
             AmiDate = 1  # 如果没有指定日期，则是默认日期
             AmiTime = 0  # 如果没有指定时间，则是默认时间
-
+            amiRetention = 14    # Lambda备份脚本创建的AMI默认保留周期
             for tag in Instance['Tags']:  # 获取需要的Tag并转换
 
                 # 检查是否设置了tag 'CreateAmiBackup'
                 # 如果不是，设置 ‘SkipAmi’标记以跳过此AMI的创建
 
                 if tag['Key'] == 'CreateAmiBackup':
-                    print("正在检查是否设置了‘CreateAmiBackup’的Tag。。。")
+                    print("正在检查是否设置了‘CreateAmiBackup’的标签...")
                     CreateAmiFlag = tag['Value'].replace(' ',
                                                          '').lower()  # 删除空格并转换为小写
                     if CreateAmiFlag not in ['y', 'yes', 't', 'true',
@@ -62,7 +62,7 @@ def createAmi():
                 # 检查 ‘AmiBackupDates’ 是否为今天 (UTC)
                 # 如果不是，设置 ‘SkipAmi’标记以跳过此AMI的创建
                 elif tag['Key'] == 'AmiBackupDates':
-                    print("获取AmiBackupDates标记值中。。。")
+                    print("获取AmiBackupDates标记值中...")
                     AmiDateList = tag['Value'].replace(' ', '').rstrip(',').split(
                         ",")  # 删除不需要的空格和逗号并将其设为列表
                     for date in AmiDateList:  # 使用Tag的值替换AMI日期的默认值
@@ -125,20 +125,26 @@ def createAmi():
                             ExcludedDevicesList = []
                             # print ExcludedDevicesList
                             break
-                        # print ExcludedDevicesList
+                elif tag['Key'] == 'AmiRetentionDays':
+                    if not tag['Value'].isdigit():
+                        print("请注意！实例 {} 拥有无效的 [AmiRetentionDays] 值:[ {} ],创建的AMI会默认保留 {} 天.".format(InstanceId,
+                                                                                                     tag['Value'],
+                                                                                                     amiRetention))
+                    else:
+                        amiRetention = tag['Value']
 
             # 如果不满足条件，AMI的日期和时间将会是默认值
             print("AMI should be taken on " + str(AmiDate))
             print("AMI should be taken at " + str(AmiTime))
             if SkipAmi:
-                print("条件不匹配，以下实例未创建AMI: " + InstanceId)
+                print("因条件不匹配，以下实例未创建AMI: " + InstanceId)
                 break
 
-            print("创建AMI的实例ID: %s, 服务器名称: %s" % (InstanceId, InstanceName))
             Description = "Created by AWS Lambda AMI Backup Script from %s on %s" % (InstanceId, str(now.isoformat()))
             AmiName = InstanceName +now.strftime(" - AMI taken on %Y-%m-%d at %H.%M.%S")
-            print("设置AMI名称为: " + AmiName)
             print("以下设备将被排除在外: " + str(ExcludedDevicesList))
+            print("创建AMI的实例ID: [{}], 服务器名称: [{}]".format(InstanceId, InstanceName))
+            print("创建的AMI名称为: [{}],设置保留周期为:[{}]天.".format(AmiName,amiRetention))
             AmiResponse = ec2.create_image(DryRun=False,
                                            InstanceId=InstanceId,
                                            Name=AmiName,
@@ -157,6 +163,8 @@ def createAmi():
             ec2.create_tags(Resources=[AmiId], Tags=AmiTags)  # 标记新的AMI
     return
 
+createAmi()
+
 # Main Function
-def ami_backup(event, context):
-    createAmi()
+# def ami_backup(event, context):
+#     createAmi()
