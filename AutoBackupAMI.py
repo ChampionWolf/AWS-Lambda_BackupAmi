@@ -9,6 +9,7 @@ import datetime
 from botocore.exceptions import ClientError
 import re
 
+# 首次运行请更改开始时间
 start_time = "2019-1-11"
 ec2 = boto3.client('ec2')
 # 现在时间等于utc时间+8小时
