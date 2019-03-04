@@ -1,4 +1,4 @@
-# Schedule AMI And EBS Snapshot with Lambda
+# AutoBackup AMI with Lambda
 该项目是使用AWS Lambda按计划备份AMI的解决方案。通过CloudWatch Events配置执行时间。
 
 # 使用Lambda自动化AWS备份
