@@ -66,5 +66,5 @@ Lambda 提供了无需开启服务器即可运行程序/脚本的能力，再通
 * 第30天的备份保留
 * 第360天的备份保留
 
-##### **Tag配置**
+##### **Tag配置:**
 ![Example](https://github.com/ChampionWolf/AWS-Lambda_BackupAmi/blob/master/Example.png?raw=true)
