@@ -9,8 +9,7 @@ import datetime
 from botocore.exceptions import ClientError
 import re
 
-# 首次运行请更改开始时间
-start_time = "2019-1-11"
+start_time = "2019-1-10"
 ec2 = boto3.client('ec2')
 # 现在时间等于utc时间+8小时
 now_time = (datetime.datetime.utcnow() + datetime.timedelta(hours=8)).strftime('%Y-%m-%d')
@@ -29,9 +28,9 @@ def diff_time(n_time, s_time):
     r_time = n_time - s_time
     return r_time.days
 
+
 # 创建AMI的功能实现
 def createAmi():
-
     # 定义全局变量
     global InstanceName
     # 程序总共运行了多长时间
@@ -44,15 +43,15 @@ def createAmi():
     for Instances in Reservations['Reservations']:
         for Instance in Instances['Instances']:
             # 初始化每次迭代的变量
-            InstanceId = Instance['InstanceId']     # 获取用于创建AMI的实例ID，并为每个实例初始化以下变量
+            InstanceId = Instance['InstanceId']  # 获取用于创建AMI的实例ID，并为每个实例初始化以下变量
             AmiFlag = ''
-            ExcludedDevices = []    # 定义排除（不创建AMI）的设备
-            TransferAmiFlag = ''    # 未来使用
-            ExcludedDevicesList = []    # 定义排除（不创建AMI）的设备列表
-            SkipAmi = False     # 定义默认值
+            ExcludedDevices = []  # 定义排除（不创建AMI）的设备
+            TransferAmiFlag = ''  # 未来使用
+            ExcludedDevicesList = []  # 定义排除（不创建AMI）的设备列表
+            SkipAmi = False  # 定义默认值
             EternalAmi = False  # 定义AMI是否永久保留
             EternalTrigger = None
-            amiRetention = 7    # 备份脚本创建的AMI默认保留天数
+            amiRetention = 7  # 备份脚本创建的AMI默认保留天数
             for tag in Instance['Tags']:  # 获取实例的Tag信息
 
                 # 检查是否设置了tag 'CreateAmiBackup'
@@ -70,7 +69,7 @@ def createAmi():
                 elif tag['Key'] == 'AmiEternalRetentionDays':
                     Edays = tag['Value'].split(",")
                     for eday in Edays:
-                        print(run_time, eday)
+                        # print(run_time, eday)
                         if run_time % int(eday) == 0:
                             EternalTrigger = eday
                             EternalAmi = True
@@ -141,6 +140,7 @@ def createAmi():
             print(AmiTags)
             ec2.create_tags(Resources=[AmiId], Tags=AmiTags)  # 标记新的AMI
 
+
 def deregisterOldAmis():
     Amis = ec2.describe_images(Filters=[
         {
@@ -152,7 +152,7 @@ def deregisterOldAmis():
         # 如果标记 AmiRetentionDays 中指定了值，则初始化AMI保留值为此值
 
         amiRetentionOverride = False
-        amiRetention = 7        # Lambda备份脚本创建的AMI的默认保留期
+        amiRetention = 7  # Lambda备份脚本创建的AMI的默认保留期
         EternalAmi = False
         for tag in ami['Tags']:
             if tag['Key'] == 'EternalAmi' and tag['Value'].lower() == 'true':
@@ -169,7 +169,7 @@ def deregisterOldAmis():
                 amiRetentionOverride = False
 
         if EternalAmi:
-            break
+            continue
 
         if amiRetentionOverride:
             amiRetention = int(amiRetentionOverride)
@@ -184,7 +184,7 @@ def deregisterOldAmis():
             DeviceMappings = ImageDetails['Images'][0]['BlockDeviceMappings']
             SnapshotIds = []
             for device in DeviceMappings:
-                if 'Ebs' not in device:     # 跳过不是EBS的设备
+                if 'Ebs' not in device:  # 跳过不是EBS的设备
                     continue
                 SnapshotIds.append(device['Ebs']['SnapshotId'])  # 储存快照ID
 
@@ -195,9 +195,9 @@ def deregisterOldAmis():
                 ec2.deregister_image(DryRun=False, ImageId=ami['ImageId'])
 
                 # 删除这个AMI的快照
-                for SnapshotId in SnapshotIds:
-                    print("Deleting ", SnapshotId)
-                    ec2.delete_snapshot(DryRun=False, SnapshotId=SnapshotId)
+                # for SnapshotId in SnapshotIds:
+                #     print("Deleting ", SnapshotId)
+                #     ec2.delete_snapshot(DryRun=False, SnapshotId=SnapshotId)
             except ClientError as e:
                 print(e)
 
